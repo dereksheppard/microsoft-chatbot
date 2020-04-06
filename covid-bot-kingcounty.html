@@ -1,0 +1,240 @@
+<html>
+
+<head>
+    <title>King County webchat bot for COVID-19</title>
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.0/css/all.css">
+    <script src="https://cdn.botframework.com/botframework-webchat/latest/webchat-es5.js"></script>
+
+    <style>
+        /* COVID alert box */
+
+        div.covid-alert {
+            border-top: 7px solid #D67617;
+            font-size: 1.7rem;
+            line-height: 1.5;
+        }
+
+        /* Chatbot styles */
+
+        img[src=""] {
+            display: none;
+        }
+
+        a#chatIcon img {
+            width: 80px;
+            height: 88px;
+            right: 16px;
+            bottom: 80px;
+            position: fixed;
+            z-index: 1001;
+            cursor: pointer;
+        }
+
+        #chatFrame {
+            border: 2px solid rgb(118, 118, 118);
+            width: 400px;
+            height: 500px;
+            max-height: calc(100% - 200px);
+            right: 18px;
+            bottom: 178px;
+            visibility: hidden;
+            position: fixed;
+            z-index: 1001;
+            background-color: rgb(255, 255, 255);
+            max-width: calc(100% - 188px);
+            display: flex;
+            flex-direction: column;
+            min-width: 300px;
+        }
+
+        #chatFrame input:focus {
+            outline: 2px solid #3C7893;
+            outline-offset: 8px;
+        }
+
+        #chatFrame button:focus {
+            outline: 2px solid #3C7893;
+            outline-offset: -2px;
+        }
+
+        #chatWindow {
+            height: calc(100% - 30px);
+        }
+
+        #byeChat {
+            text-align: right;
+            padding: 5px;
+            background-color: #ececec;
+            border-bottom: 1px solid rgb(188, 188, 188);
+        }
+
+        #chatclosingIcon:focus {
+            border: 2px solid #3c7893;
+        }
+
+        #chatclosingIcon:hover,
+        #chatclosingIcon:focus {
+            color: #000;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        #chatclosingIcon.using-mouse:focus {
+            text-decoration: none;
+            border: none;
+            color: #000;
+        }
+
+        #chatclosingIcon.using-mouse:active {
+            background-color: #f5f5f5;
+        }
+
+        a#chatIcon:focus,
+        a#chatIcon img:focus {
+            outline: #08f auto 2px;
+        }
+
+        a#chatIcon:not(:focus),
+        a#chatIcon:active,
+        a#chatIcon img:active,
+        a#chatIcon img:not(:focus) {
+            outline: none;
+        }
+
+        a#chatIcon.using-mouse:focus,
+        a#chatIcon.using-mouse img:focus {
+            outline: none;
+        }
+
+        #chatWindow input[data-id="webchat-sendbox-input"]::-webkit-input-placeholder {
+            color: #767676;
+            opacity: 1;
+        }
+
+        #chatWindow input[data-id="webchat-sendbox-input"]:-moz-placeholder {
+            /* FF 4-18 */
+            color: #767676;
+            opacity: 1;
+        }
+
+        #chatWindow input[data-id="webchat-sendbox-input"]::-moz-placeholder {
+            /* FF 19+ */
+            color: #767676;
+            opacity: 1;
+        }
+
+        #chatWindow input[data-id="webchat-sendbox-input"]:-ms-input-placeholder {
+            /* IE 10+ */
+            color: #767676;
+            opacity: 1;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="White">
+        <div id="dnn_ctr34131_ContentPane" class="contentpane">
+            <div id="dnn_ctr34131_ModuleContent" class="DNNModuleContent ModDNNHTMLC">
+                <div id="dnn_ctr34131_HtmlModule_lblContent">
+                    <div>
+                        <a id="chatIcon" href="#"><img alt="COVID-19 Question and Answer Bot" tabindex="0"
+                                src="https://www.doh.wa.gov/portals/1/Images/CovidChatbot.png" style=""></a>
+                        <div id="chatFrame">
+                            <!--option to close the bot-->
+                            <div id="byeChat">
+                                <button id="chatclosingIcon">
+                                    <span class="fa fa-times fa-lg" aria-hidden="true"></span>
+                                </button>
+                            </div>
+                            <div id="chatWindow"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.botframework.com/botframework-webchat/latest/webchat.js"></script>
+    <script>
+        function handleKeyboardMouseFocus(aDomElement) {
+            aDomElement.addEventListener('mousedown', function () {
+                aDomElement.classList.add('using-mouse');
+            });
+
+            aDomElement.addEventListener('keydown', function (event) {
+                if (event.keyCode === 9) {
+                    aDomElement.classList.remove('using-mouse');
+                }
+
+                if (event.keyCode === 13) {
+                    aDomElement.onclick(event);
+                }
+            });
+        }
+
+        function domReady(fn) {
+            document.addEventListener("DOMContentLoaded", fn);
+            if (document.readyState === "interactive" || document.readyState === "complete") {
+                fn();
+            }
+        }
+
+        domReady(() => {
+            let chatIcon = document.getElementById("chatIcon");
+            let chatFrame = document.getElementById("chatFrame");
+            let chatWindow = document.getElementById("chatWindow");
+            let chatClosingIcon = document.getElementById("chatclosingIcon");
+
+            handleKeyboardMouseFocus(chatIcon);
+            handleKeyboardMouseFocus(chatClosingIcon);
+
+            chatIcon.onclick = () => {
+                (async function () {
+                    if (chatFrame.style.visibility === 'hidden') {
+                        document.activeElement.blur(); // remove outline from chatIcon for keyboard users
+                        chatFrame.style.visibility = 'visible';
+                        const res = await fetch('[endpoint goes here]', { method: 'POST' });
+                        const { token } = await res.json();
+                        chatFrame.style.visibility = 'visible';
+
+                        const styleOptions = {
+                            hideUploadButton: true,
+                            botAvatarInitials: 'KC',
+                            botAvatarBackgroundColor: '#3E6673',
+                            botAvatarInitialColor: '#000',
+                            userAvatarInitials: 'Me',
+                            userAvatarBackgroundColor: '#264c5d',
+                            bubbleBackground: '#F0F7F7',
+                            bubbleBorderColor: 'rgb(186, 212, 209)',
+                            bubbleBorderRadius: 4,
+                            bubbleTextColor: 'rgb(35, 34, 31)',
+                            bubbleFromUserBackground: '#264c5d',
+                            bubbleFromUserBorderColor: '#625e5e',
+                            bubbleFromUserBorderRadius: 4,
+                            bubbleFromUserTextColor: '#FFFFFF',
+                        };
+
+                        window.WebChat.renderWebChat(
+                            {
+                                directLine: window.WebChat.createDirectLine({ token }),
+                                styleOptions
+                            },
+                            chatWindow
+                        );
+
+                        input = document.querySelectorAll('input[data-id="webchat-sendbox-input"]')[0];
+                        input.placeholder = 'Type your question';
+                    } else {
+                        chatFrame.style.visibility = 'hidden';
+                    }
+                })().catch(err => console.error(err));
+            };
+
+            chatClosingIcon.onclick = function () {
+                chatFrame.style.visibility = 'hidden';
+            };
+
+        });
+    </script>
+</body>
+
+</html>
